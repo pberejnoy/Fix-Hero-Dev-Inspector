@@ -1,0 +1,75 @@
+{
+  "manifest_version": 3,
+  "name": "FixHero Dev Inspector",
+  "version": "0.2.0",
+  "description": "Advanced development assistant for Frontend, Backend, QA, and Designers",
+  "permissions": ["activeTab", "storage", "scripting", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["sidebar.html", "styles.css", "dashboard.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "commands": {
+    "mark-bug": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+B"
+      },
+      "description": "Mark current element as bug"
+    },
+    "take-screenshot": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+S"
+      },
+      "description": "Take screenshot"
+    },
+    "add-note": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+N"
+      },
+      "description": "Add note"
+    },
+    "open-dashboard": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+D"
+      },
+      "description": "Open Dashboard"
+    },
+    "quick-export": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+E"
+      },
+      "description": "Quick Export to Markdown"
+    },
+    "toggle-sidebar": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+B"
+      },
+      "description": "Toggle Sidebar"
+    }
+  }
+}
