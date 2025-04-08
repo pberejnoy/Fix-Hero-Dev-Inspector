@@ -30,7 +30,7 @@ Built for:
 The extension helps you inspect, capture, and report issues directly from any web page, supporting both manual workflows and AI-assisted insights.
 
 ## 📫 Contact
-For inquiries: [your-email@example.com]  
+For inquiries: fixherodev@gmail.com  
 (Replace this with your real contact email!)
 
 ---
