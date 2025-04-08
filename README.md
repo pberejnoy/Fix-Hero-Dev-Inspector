@@ -31,7 +31,6 @@ The extension helps you inspect, capture, and report issues directly from any we
 
 ## 📫 Contact
 For inquiries: fixherodev@gmail.com  
-(Replace this with your real contact email!)
 
 ---
 
