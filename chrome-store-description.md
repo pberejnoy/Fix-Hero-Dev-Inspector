@@ -1,0 +1,1 @@
+FixHero Dev Inspector helps developers and designers inspect web pages, capture bugs, generate professional reports, and collaborate in real-time. Boost productivity with AI tagging, smart export tools, and live issue tracking across sessions. Designed for frontend, backend, QA, and UI teams.
