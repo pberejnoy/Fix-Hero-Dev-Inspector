@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FixHero Dev Inspector",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Advanced development assistant for Frontend, Backend, QA, and Designers",
   "permissions": ["activeTab", "storage", "scripting", "tabs"],
   "host_permissions": ["<all_urls>"],
@@ -11,6 +11,7 @@
   },
   "action": {
     "default_popup": "popup.html",
+    "default_title": "FixHero Dev Inspector",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -71,5 +72,8 @@
       },
       "description": "Toggle Sidebar"
     }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
   }
 }
