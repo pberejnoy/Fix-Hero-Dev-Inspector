@@ -1,0 +1,15 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "issues",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "timestamp", "order": "DESCENDING" }]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "lastUpdated", "order": "DESCENDING" }]
+    }
+  ],
+  "fieldOverrides": []
+}
