@@ -38,7 +38,7 @@ You have the right to:
 - Access your data.
 - Delete your data at any time.
 - Request data portability.
-- Contact us regarding privacy concerns at **support@fixhero.ai**
+- Contact us regarding privacy concerns at **fixherodev@gmail.com**
 
 ## Changes to This Policy
 
