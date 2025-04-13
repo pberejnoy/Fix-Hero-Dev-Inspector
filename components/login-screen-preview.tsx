@@ -9,17 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, Bug } from "lucide-react"
-import { AsyncButton } from "@/components/ui/async-button"
-import { loginUser, registerUser, resetPassword } from "@/lib/auth-service"
+import { Button } from "@/components/ui/button"
 
 interface LoginScreenProps {
   onLogin: (email: string, password: string) => Promise<void>
 }
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+export function LoginScreenPreview({ onLogin }: LoginScreenProps) {
   const [activeTab, setActiveTab] = useState("login")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState("demo@example.com")
+  const [password, setPassword] = useState("password")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [displayName, setDisplayName] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -32,13 +31,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsLoading(true)
 
     try {
-      await loginUser(email, password)
-      // The onLogin callback will be called by the parent component
-      // which is listening to the auth state changes
       await onLogin(email, password)
     } catch (error: any) {
       console.error("Login error:", error)
-      setError(getAuthErrorMessage(error.code) || "Failed to login. Please try again.")
+      setError("Failed to login. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -61,12 +57,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsLoading(true)
 
     try {
-      await registerUser(email, password, displayName || email.split("@")[0])
-      // After registration, automatically log in
+      // In preview mode, just use the login function
       await onLogin(email, password)
     } catch (error: any) {
       console.error("Registration error:", error)
-      setError(getAuthErrorMessage(error.code) || "Failed to register. Please try again.")
+      setError("Failed to register. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -84,33 +79,15 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsLoading(true)
 
     try {
-      await resetPassword(email)
-      setResetSent(true)
+      // Simulate password reset
+      setTimeout(() => {
+        setResetSent(true)
+        setIsLoading(false)
+      }, 1000)
     } catch (error: any) {
       console.error("Password reset error:", error)
-      setError(getAuthErrorMessage(error.code) || "Failed to send reset email. Please try again.")
-    } finally {
+      setError("Failed to send reset email. Please try again.")
       setIsLoading(false)
-    }
-  }
-
-  // Helper function to get user-friendly error messages
-  const getAuthErrorMessage = (errorCode: string): string | null => {
-    switch (errorCode) {
-      case "auth/user-not-found":
-        return "No account found with this email address"
-      case "auth/wrong-password":
-        return "Incorrect password"
-      case "auth/email-already-in-use":
-        return "An account with this email already exists"
-      case "auth/invalid-email":
-        return "Invalid email address"
-      case "auth/weak-password":
-        return "Password is too weak"
-      case "auth/too-many-requests":
-        return "Too many failed attempts. Please try again later"
-      default:
-        return null
     }
   }
 
@@ -166,12 +143,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                     required
                   />
                 </div>
+
+                <div className="text-sm text-muted-foreground">
+                  <p>For preview: Use any email and password</p>
+                </div>
               </CardContent>
 
               <CardFooter>
-                <AsyncButton type="submit" className="w-full" isLoading={isLoading} loadingText="Logging in...">
-                  Login
-                </AsyncButton>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Logging in..." : "Login"}
+                </Button>
               </CardFooter>
             </form>
           </Card>
@@ -240,9 +221,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </CardContent>
 
               <CardFooter>
-                <AsyncButton type="submit" className="w-full" isLoading={isLoading} loadingText="Registering...">
-                  Register
-                </AsyncButton>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Registering..." : "Register"}
+                </Button>
               </CardFooter>
             </form>
           </Card>
@@ -287,15 +268,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </CardContent>
 
               <CardFooter>
-                <AsyncButton
-                  type="submit"
-                  className="w-full"
-                  isLoading={isLoading}
-                  loadingText="Sending reset link..."
-                  disabled={resetSent}
-                >
-                  {resetSent ? "Email Sent" : "Send Reset Link"}
-                </AsyncButton>
+                <Button type="submit" className="w-full" disabled={isLoading || resetSent}>
+                  {isLoading ? "Sending reset link..." : resetSent ? "Email Sent" : "Send Reset Link"}
+                </Button>
               </CardFooter>
             </form>
           </Card>

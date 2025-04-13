@@ -1,8 +1,8 @@
 "use client"
 
 import { Component, type ErrorInfo, type ReactNode } from "react"
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
-import { Button } from "../ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import { AlertCircle, RefreshCw } from "lucide-react"
 
 interface Props {

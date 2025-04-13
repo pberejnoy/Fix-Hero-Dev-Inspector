@@ -22,14 +22,15 @@ import {
   Github,
   TextCursorIcon as Cursor,
 } from "lucide-react"
-import { Button } from "../ui/button"
-import { Separator } from "../ui/separator"
-import { ScrollArea } from "../ui/scroll-area"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
-import { Badge } from "../ui/badge"
-import { FirebaseSyncStatus } from "./firebase-sync-status"
-import type { Issue, Session, User } from "../../lib/types"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { FirebaseSyncStatus } from "@/components/firebase-sync-status"
+import type { Issue, Session, User } from "@/lib/types"
+import { ShortcutsHelp } from "@/components/ui/shortcuts-help"
 
 interface SidebarProps {
   activeTab: string
@@ -121,7 +122,7 @@ export function Sidebar({
         </div>
         <div className="flex items-center gap-1">
           <FirebaseSyncStatus />
-
+          <ShortcutsHelp />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
