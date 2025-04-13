@@ -1,4 +1,4 @@
-import type { Issue, Session } from "../../lib/types"
+import type { Issue, Session } from "./types"
 
 // Export formats
 export type ExportFormat = "markdown" | "json" | "csv" | "github" | "cursor" | "notion"
@@ -901,17 +901,33 @@ function exportIssuesToNotion(issues: Issue[], session: Session | null): string 
   return markdown
 }
 
-// Download exported content as a file
+// Download exported content as a file using Chrome's downloads API
 export function downloadExport(content: string, filename: string, mimeType: string): void {
+  // Create a blob from the content
   const blob = new Blob([content], { type: mimeType })
   const url = URL.createObjectURL(blob)
 
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  a.click()
-
-  URL.revokeObjectURL(url)
+  // Use Chrome's downloads API if available (extension environment)
+  if (typeof chrome !== "undefined" && chrome.downloads && chrome.downloads.download) {
+    chrome.downloads.download(
+      {
+        url: url,
+        filename: filename,
+        saveAs: true,
+      },
+      () => {
+        // Revoke the URL after download starts
+        URL.revokeObjectURL(url)
+      },
+    )
+  } else {
+    // Fallback for non-extension environments (development)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 }
 
 // Helper function to get MIME type for export format

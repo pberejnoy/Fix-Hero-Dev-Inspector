@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore"
-import { db, auth } from "../../lib/firebase-config"
+import { db, auth } from "./firebase-config"
 
 // Subscription tiers
 export enum SubscriptionTier {

@@ -4,10 +4,16 @@ import {
   signOut,
   sendPasswordResetEmail,
   updateProfile,
-} from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../../lib/firebase-config";
-import type { User } from "../../lib/types";
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithCredential,
+} from "firebase/auth"
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore"
+import { auth, db } from "./firebase-config"
+import type { User } from "./types"
+
+// Check if we're in a Chrome extension environment
+const isExtensionEnvironment = typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id
 
 // Register a new user
 export async function registerUser(
@@ -38,6 +44,11 @@ export async function registerUser(
 
     // Get ID token
     const token = await firebaseUser.getIdToken()
+
+    // Store token in extension storage if in extension environment
+    if (isExtensionEnvironment && chrome.storage) {
+      await chrome.storage.local.set({ authToken: token, userId: firebaseUser.uid })
+    }
 
     return {
       user: {
@@ -76,6 +87,11 @@ export async function loginUser(email: string, password: string): Promise<{ user
     // Get ID token
     const token = await firebaseUser.getIdToken()
 
+    // Store token in extension storage if in extension environment
+    if (isExtensionEnvironment && chrome.storage) {
+      await chrome.storage.local.set({ authToken: token, userId: firebaseUser.uid })
+    }
+
     return {
       user: {
         id: firebaseUser.uid,
@@ -90,10 +106,125 @@ export async function loginUser(email: string, password: string): Promise<{ user
   }
 }
 
+// Login with Google (using chrome.identity in extension environment)
+export async function loginWithGoogle(): Promise<{ user: User; token: string }> {
+  try {
+    if (isExtensionEnvironment && typeof chrome !== "undefined" && chrome.identity) {
+      // Use chrome.identity for extension environment
+      return new Promise((resolve, reject) => {
+        const AUTH_PARAMS = {
+          client_id: "YOUR_CLIENT_ID.apps.googleusercontent.com", // Replace with your client ID
+          scopes: ["profile", "email"],
+          redirect_uri: chrome.identity.getRedirectURL(),
+        }
+
+        // Construct the authorization URL
+        const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${AUTH_PARAMS.client_id}&response_type=token&redirect_uri=${encodeURIComponent(
+          AUTH_PARAMS.redirect_uri,
+        )}&scope=${encodeURIComponent(AUTH_PARAMS.scopes.join(" "))}`
+
+        // Launch the auth flow
+        chrome.identity.launchWebAuthFlow(
+          {
+            url: authUrl,
+            interactive: true,
+          },
+          async (responseUrl) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message))
+              return
+            }
+
+            // Extract the access token from the response URL
+            const accessToken = new URLSearchParams(new URL(responseUrl).hash.substring(1)).get("access_token")
+            if (!accessToken) {
+              reject(new Error("Failed to get access token"))
+              return
+            }
+
+            // Create a credential with the token
+            const credential = GoogleAuthProvider.credential(null, accessToken)
+
+            // Sign in with the credential
+            const userCredential = await signInWithCredential(auth, credential)
+            const firebaseUser = userCredential.user
+
+            // Update or create user document in Firestore
+            await setDoc(
+              doc(db, "users", firebaseUser.uid),
+              {
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                lastLogin: serverTimestamp(),
+                photoURL: firebaseUser.photoURL,
+                updatedAt: serverTimestamp(),
+              },
+              { merge: true },
+            )
+
+            // Get ID token
+            const token = await firebaseUser.getIdToken()
+
+            // Store token in extension storage
+            await chrome.storage.local.set({ authToken: token, userId: firebaseUser.uid })
+
+            resolve({
+              user: {
+                id: firebaseUser.uid,
+                email: firebaseUser.email || "",
+                displayName: firebaseUser.displayName || "",
+              },
+              token,
+            })
+          },
+        )
+      })
+    } else {
+      // Use regular Firebase auth for non-extension environment
+      const provider = new GoogleAuthProvider()
+      const userCredential = await signInWithPopup(auth, provider)
+      const firebaseUser = userCredential.user
+
+      // Update or create user document in Firestore
+      await setDoc(
+        doc(db, "users", firebaseUser.uid),
+        {
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          lastLogin: serverTimestamp(),
+          photoURL: firebaseUser.photoURL,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      )
+
+      // Get ID token
+      const token = await firebaseUser.getIdToken()
+
+      return {
+        user: {
+          id: firebaseUser.uid,
+          email: firebaseUser.email || "",
+          displayName: firebaseUser.displayName || "",
+        },
+        token,
+      }
+    }
+  } catch (error) {
+    console.error("Error logging in with Google:", error)
+    throw error
+  }
+}
+
 // Logout user
 export async function logoutUser(): Promise<void> {
   try {
     await signOut(auth)
+
+    // Clear token from extension storage if in extension environment
+    if (isExtensionEnvironment && chrome.storage) {
+      await chrome.storage.local.remove(["authToken", "userId"])
+    }
   } catch (error) {
     console.error("Error logging out:", error)
     throw error
@@ -112,32 +243,68 @@ export async function resetPassword(email: string): Promise<void> {
 
 // Get current user
 export async function getCurrentUser(): Promise<User | null> {
-  return new Promise((resolve) => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      unsubscribe()
-      if (firebaseUser) {
-        try {
-          // Get user data from Firestore
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid))
-          const userData = userDoc.data()
+  // First check extension storage for token if in extension environment
+  if (isExtensionEnvironment && chrome.storage) {
+    try {
+      return new Promise((resolve) => {
+        chrome.storage.local.get(["authToken", "userId"], async (result) => {
+          if (result.authToken && result.userId) {
+            try {
+              // Get user data from Firestore
+              const userDoc = await getDoc(doc(db, "users", result.userId))
+              const userData = userDoc.data()
 
-          resolve({
-            id: firebaseUser.uid,
-            email: firebaseUser.email || "",
-            displayName: firebaseUser.displayName || userData?.displayName || firebaseUser.email?.split("@")[0] || "",
-          })
-        } catch (error) {
-          console.error("Error getting user data:", error)
-          resolve({
-            id: firebaseUser.uid,
-            email: firebaseUser.email || "",
-            displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
-          })
-        }
-      } else {
-        resolve(null)
+              if (userData) {
+                resolve({
+                  id: result.userId,
+                  email: userData.email || "",
+                  displayName: userData.displayName || "",
+                })
+                return
+              }
+            } catch (error) {
+              console.error("Error getting user data from Firestore:", error)
+            }
+          }
+
+          // If no token in storage or Firestore fetch failed, check Firebase Auth
+          checkFirebaseAuth(resolve)
+        })
+      })
+    } catch (error) {
+      console.error("Error checking extension storage:", error)
+    }
+  }
+
+  // Default to checking Firebase Auth
+  return new Promise(checkFirebaseAuth)
+}
+
+function checkFirebaseAuth(resolve: (user: User | null) => void) {
+  const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+    unsubscribe()
+    if (firebaseUser) {
+      try {
+        // Get user data from Firestore
+        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid))
+        const userData = userDoc.data()
+
+        resolve({
+          id: firebaseUser.uid,
+          email: firebaseUser.email || "",
+          displayName: firebaseUser.displayName || userData?.displayName || firebaseUser.email?.split("@")[0] || "",
+        })
+      } catch (error) {
+        console.error("Error getting user data:", error)
+        resolve({
+          id: firebaseUser.uid,
+          email: firebaseUser.email || "",
+          displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
+        })
       }
-    })
+    } else {
+      resolve(null)
+    }
   })
 }
 
